@@ -1,0 +1,7 @@
+{
+  "name": "Smart Portable Agriculture Monitoring System",
+  "description": "An IoT-based portable agriculture monitoring platform that displays real-time sensor data, historical graphs, device location maps, and an admin dashboard for management.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
