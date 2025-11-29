@@ -18,11 +18,11 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [devices, setDevices] = useState<Device[]>([]);
   const [latestSensorData, setLatestSensorData] = useState<Map<number, SensorData>>(new Map());
-  const [loading, setLoading] = useState(true); // For the initial page load
+  const [loading, setLoading] = useState(true);
   const { showToast } = useToast();
 
   const fetchAllData = useCallback(async () => {
-    // This function will now run silently in the background for polling
+    setLoading(true);
     try {
       const devicesData = await api.getDevices();
       setDevices(devicesData);
@@ -45,50 +45,35 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       const baseMessage = 'Failed to fetch data from the server.';
       console.error(baseMessage, error);
+      // Check for a common network error when the backend is down
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
           showToast(`${baseMessage} Is the backend server running?`, 'error');
+          console.error("Hint: Make sure the backend server is running. You can start it by navigating to the 'backend' directory and running 'npm run dev'.");
       } else {
           showToast(baseMessage, 'error');
       }
+    } finally {
+      setLoading(false);
     }
   }, [showToast]);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const initialLoad = async () => {
-      setLoading(true);
-      await fetchAllData();
-      if (isMounted) {
-        setLoading(false);
-      }
-    };
-    
-    initialLoad();
-
-    // Set up polling every 10 seconds
-    const intervalId = setInterval(fetchAllData, 10000); // 10 seconds
-
-    // Cleanup interval on component unmount
-    return () => {
-      isMounted = false;
-      clearInterval(intervalId);
-    };
+    fetchAllData();
   }, [fetchAllData]);
   
   const updateDevice = async (device: Device) => {
     await api.updateDevice(device);
-    fetchAllData(); // Manually trigger a refresh after action
+    fetchAllData();
   }
   
   const addDevice = async (device: Omit<Device, 'device_id'>) => {
     await api.addDevice(device);
-    fetchAllData(); // Manually trigger a refresh after action
+    fetchAllData();
   }
 
   const deleteDevice = async (id: number) => {
     await api.deleteDevice(id);
-    fetchAllData(); // Manually trigger a refresh after action
+    fetchAllData();
   }
 
   return (
